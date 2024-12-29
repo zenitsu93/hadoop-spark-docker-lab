@@ -1,41 +1,37 @@
-# Instructions pour configurer votre environnement Hadoop avec Docker
-## Télécharger et configurer Hadoop avec Docker
+# Environnement Hadoop et Spark sous Docker
 
-### Télécharger l'image Docker
+Monter un cluster Hadoop de trois nœuds sur une seule machine, en quelques commandes, pour expérimenter sans matériel ni installation système.
 
-Depuis un terminal, téléchargez l’image Docker que j’ai stockée sur Docker Hub :
+L'image est publiée sur Docker Hub : **`zenitsu93/spark-hadoop:v1`**.
+
+## Mise en route
+
+**1. Récupérer l'image**
 
 ```sh
 docker pull zenitsu93/spark-hadoop:v1
 ```
 
-### Créer les conteneurs
+**2. Créer le réseau**
 
-#### Créer un réseau Docker
+Les trois conteneurs doivent se voir entre eux : un réseau Docker dédié leur donne une résolution de noms interne, indispensable à Hadoop qui identifie ses nœuds par leur nom d'hôte.
 
-Créez un réseau qui permettra de relier les trois conteneurs :
-
-```sh 
+```sh
 docker network create --driver=bridge hadoop
 ```
 
-#### Démarrer les conteneurs
+**3. Démarrer les conteneurs**
 
-Démarrez les conteneurs à partir de l’image téléchargée :
+Un nœud maître et deux nœuds de travail, attachés à ce réseau.
 
-```sh
-docker run -itd --net=hadoop -p 50070:50070 -p 8088:8088 -p 8080:8080 -p 7077:7077 -p 16010:16010 --name hadoop-master --hostname hadoop-master zenitsu93/spark-hadoop:v1
+## Pourquoi un cluster local
 
-docker run -itd -p 8042:8042 --net=hadoop --name hadoop-slave1 --hostname hadoop-slave1 zenitsu93/spark-hadoop:v1
+Hadoop et Spark sont conçus pour le calcul réparti, et leur comportement diffère de celui d'une exécution locale : partitionnement des données, transfert entre nœuds, tolérance aux pannes. Ces mécanismes ne se manifestent que sur plusieurs nœuds.
 
-docker run -itd -p 8043:8042 --net=hadoop --name hadoop-slave2 --hostname hadoop-slave2 zenitsu93/spark-hadoop:v1
-```
+Trois conteneurs sur un portable ne reproduisent évidemment pas les performances d'un vrai cluster — la latence réseau y est quasi nulle et le disque est partagé. Mais ils reproduisent la **logique** : c'est suffisant pour écrire un traitement MapReduce ou un travail Spark et vérifier qu'il se répartit correctement.
 
-### Utiliser le conteneur hadoop-master
+## Ce dépôt
 
-Entrez dans le conteneur `hadoop-master` pour commencer à l’utiliser :
+Il ne contient que ces instructions : le contenu réel est dans l'image Docker publiée, avec Hadoop et Spark déjà configurés.
 
-```sh
-docker exec -it hadoop-master bash
-```
-
+Les traitements exécutés sur cet environnement utilisent MrJob, qui permet d'écrire un travail MapReduce en Python et de le soumettre au cluster sans passer par Java.
